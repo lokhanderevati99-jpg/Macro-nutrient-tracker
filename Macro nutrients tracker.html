@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Macro & Nutrient Tracker</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --primary: #0f172a;
+      --accent: #2563eb;
+      --border: #e2e8f0;
+      --text: #334155;
+      --text-dark: #0f172a;
+      --danger: #ef4444;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 12px;
+      line-height: 1.4;
+    }
+    .container {
+      max-width: 650px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.25rem;
+      color: var(--text-dark);
+      margin: 0 0 12px 0;
+      text-align: center;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+    /* Responsive Summary Grid with Auto-fit and Safe Minimums */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+      gap: 6px;
+    }
+    .metric-box {
+      background: #f1f5f9;
+      border-radius: 6px;
+      padding: 6px 2px;
+      text-align: center;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .metric-box span {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #64748b;
+      display: block;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+    .metric-box strong {
+      font-size: 0.88rem;
+      color: var(--text-dark);
+      display: block;
+      margin-top: 1px;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 2fr repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+    input, button {
+      font-size: 0.8rem;
+      padding: 6px 4px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-sizing: border-box;
+      min-width: 0;
+    }
+    input:focus {
+      outline: 2px solid var(--accent);
+      border-color: transparent;
+    }
+    button {
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #ffffff;
+      border: none;
+    }
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid var(--border);
+    }
+    .preset-chip-wrapper {
+      display: inline-flex;
+      align-items: center;
+      background: #e0e7ff;
+      border: 1px solid #c7d2fe;
+      border-radius: 16px;
+      margin: 3px;
+      padding: 2px 4px 2px 8px;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .preset-btn {
+      background: none;
+      border: none;
+      color: #3730a3;
+      font-weight: 600;
+      font-size: 0.75rem;
+      padding: 2px 4px;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .preset-action-btn {
+      background: none;
+      border: none;
+      font-size: 0.7rem;
+      cursor: pointer;
+      padding: 2px 4px;
+      color: #6366f1;
+    }
+    .preset-action-btn.delete:hover {
+      color: var(--danger);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+      margin-top: 4px;
+    }
+    th, td {
+      padding: 6px 4px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    th {
+      color: #64748b;
+      font-weight: 600;
+      background: #f8fafc;
+    }
+    .btn-delete {
+      background: none;
+      border: none;
+      color: var(--danger);
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 0;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .section-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+    @media (max-width: 600px) {
+      .form-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .form-grid input:first-child {
+        grid-column: span 4;
+      }
+      .form-grid button {
+        grid-column: span 4;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Macro & Nutrient Tracker</h1>
+
+    <!-- Summary Dashboard (Fitted, non-overflowing boxes) -->
+    <div class="card">
+      <div class="summary-grid">
+        <div class="metric-box"><span>Calories</span><strong id="total-cal">0</strong></div>
+        <div class="metric-box"><span>Protein</span><strong id="total-pro">0g</strong></div>
+        <div class="metric-box"><span>Carbs</span><strong id="total-carb">0g</strong></div>
+        <div class="metric-box"><span>Fat</span><strong id="total-fat">0g</strong></div>
+        <div class="metric-box"><span>Fiber</span><strong id="total-fib">0g</strong></div>
+        <div class="metric-box"><span>Sugar</span><strong id="total-sug">0g</strong></div>
+        <div class="metric-box"><span>Iron</span><strong id="total-iron">0mg</strong></div>
+      </div>
+    </div>
+
+    <!-- Quick Add Presets Manager -->
+    <div class="card">
+      <div class="section-header">
+        <span class="section-title">Quick Add Presets</span>
+        <button class="btn-secondary" style="font-size:0.7rem; padding:2px 6px;" onclick="togglePresetForm()">+ New Preset</button>
+      </div>
+
+      <div id="preset-editor" style="display:none; background:#f8fafc; padding:10px; border-radius:6px; border:1px solid var(--border); margin-bottom:8px;">
+        <div style="font-size:0.75rem; font-weight:600; margin-bottom:6px; color:var(--text-dark);" id="preset-form-title">Create / Edit Preset</div>
+        <input type="hidden" id="preset-edit-index" value="-1" />
+        <div class="form-grid">
+          <input type="text" id="p-name" placeholder="Item Name" required />
+          <input type="number" step="any" id="p-cal" placeholder="kcal" required />
+          <input type="number" step="any" id="p-pro" placeholder="Pro (g)" required />
+          <input type="number" step="any" id="p-carb" placeholder="Carb (g)" required />
+          <input type="number" step="any" id="p-fat" placeholder="Fat (g)" required />
+          <input type="number" step="any" id="p-fib" placeholder="Fib (g)" defaultValue="0" />
+          <input type="number" step="any" id="p-sug" placeholder="Sug (g)" defaultValue="0" />
+          <input type="number" step="any" id="p-iron" placeholder="Iron (mg)" defaultValue="0" />
+        </div>
+        <div style="display:flex; gap:6px; margin-top:4px;">
+          <button type="button" class="btn-primary" style="flex:1; padding:5px;" onclick="savePresetItem()">Save</button>
+          <button type="button" class="btn-secondary" style="padding:5px;" onclick="togglePresetForm(false)">Cancel</button>
+        </div>
+      </div>
+
+      <div id="presets-container"></div>
+    </div>
+
+    <!-- Log Food Form -->
+    <div class="card">
+      <div class="section-header">
+        <span class="section-title">Log Food Item</span>
+      </div>
+      <form id="food-form" onsubmit="handleCustomAdd(event)">
+        <div class="form-grid">
+          <input type="text" id="food-name" placeholder="Item Name" required />
+          <input type="number" step="any" id="food-cal" placeholder="kcal" required />
+          <input type="number" step="any" id="food-pro" placeholder="Pro" required />
+          <input type="number" step="any" id="food-carb" placeholder="Carb" required />
+          <input type="number" step="any" id="food-fat" placeholder="Fat" required />
+          <input type="number" step="any" id="food-fib" placeholder="Fib" defaultValue="0" />
+          <input type="number" step="any" id="food-sug" placeholder="Sug" defaultValue="0" />
+          <input type="number" step="any" id="food-iron" placeholder="Iron" defaultValue="0" />
+        </div>
+        <button type="submit" class="btn-primary" style="width: 100%; padding:6px; margin-top:2px;">+ Add to Today's Log</button>
+      </form>
+    </div>
+
+    <!-- Daily Log Table -->
+    <div class="card" style="overflow-x: auto;">
+      <div class="section-header">
+        <span class="section-title">Today's Entries</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>kcal</th>
+            <th>Pro</th>
+            <th>Carb</th>
+            <th>Fat</th>
+            <th>Fib</th>
+            <th>Sug</th>
+            <th>Iron</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="log-body"></tbody>
+      </table>
+      <div style="margin-top: 10px; text-align: right;">
+        <button onclick="clearAll()" style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; padding:4px 8px; font-size:0.72rem; border-radius:4px;">Reset Day</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const defaultPresets = [
+      { name: "Breakfast Combo", cal: 500, pro: 37, carb: 45, fat: 19, fib: 5.5, sug: 8.5, iron: 7.8 },
+      { name: "Protein Bento Box", cal: 500, pro: 35, carb: 72, fat: 10, fib: 14, sug: 6, iron: 4.5 },
+      { name: "Plain Curd (90g)", cal: 60, pro: 3.2, carb: 4.5, fat: 3.2, fib: 0, sug: 4.1, iron: 0.1 },
+      { name: "1/2 Mac & Cheese", cal: 230, pro: 9.8, carb: 32, fat: 6.8, fib: 1.5, sug: 3.5, iron: 1.1 },
+      { name: "Hazelnut Pastry", cal: 380, pro: 5, carb: 42, fat: 21, fib: 2, sug: 28, iron: 1.1 }
+    ];
+
+    let presets = JSON.parse(localStorage.getItem("macro_presets")) || defaultPresets;
+    let entries = JSON.parse(localStorage.getItem("macro_entries")) || [];
+
+    function renderPresets() {
+      localStorage.setItem("macro_presets", JSON.stringify(presets));
+      const container = document.getElementById("presets-container");
+      container.innerHTML = "";
+
+      if (presets.length === 0) {
+        container.innerHTML = `<span style="font-size:0.75rem; color:#94a3b8;">No presets saved.</span>`;
+        return;
+      }
+
+      presets.forEach((p, idx) => {
+        const chip = document.createElement("div");
+        chip.className = "preset-chip-wrapper";
+        chip.innerHTML = `
+          <button class="preset-btn" title="Add to log" onclick="logPreset(${idx})">+ ${p.name}</button>
+          <button class="preset-action-btn" title="Edit" onclick="openEditPreset(${idx})">&#9998;</button>
+          <button class="preset-action-btn delete" title="Delete" onclick="deletePreset(${idx})">&times;</button>
+        `;
+        container.appendChild(chip);
+      });
+    }
+
+    function togglePresetForm(show = true) {
+      const formDiv = document.getElementById("preset-editor");
+      formDiv.style.display = show ? "block" : "none";
+      if (show && document.getElementById("preset-edit-index").value === "-1") {
+        document.getElementById("preset-form-title").innerText = "Create New Preset";
+        clearPresetInputs();
+      }
+    }
+
+    function clearPresetInputs() {
+      document.getElementById("preset-edit-index").value = "-1";
+      document.getElementById("p-name").value = "";
+      document.getElementById("p-cal").value = "";
+      document.getElementById("p-pro").value = "";
+      document.getElementById("p-carb").value = "";
+      document.getElementById("p-fat").value = "";
+      document.getElementById("p-fib").value = "";
+      document.getElementById("p-sug").value = "";
+      document.getElementById("p-iron").value = "";
+    }
+
+    function openEditPreset(idx) {
+      const p = presets[idx];
+      document.getElementById("preset-form-title").innerText = `Edit "${p.name}"`;
+      document.getElementById("preset-edit-index").value = idx;
+      document.getElementById("p-name").value = p.name;
+      document.getElementById("p-cal").value = p.cal;
+      document.getElementById("p-pro").value = p.pro;
+      document.getElementById("p-carb").value = p.carb;
+      document.getElementById("p-fat").value = p.fat;
+      document.getElementById("p-fib").value = p.fib;
+      document.getElementById("p-sug").value = p.sug;
+      document.getElementById("p-iron").value = p.iron;
+      togglePresetForm(true);
+    }
+
+    function savePresetItem() {
+      const name = document.getElementById("p-name").value.trim();
+      const cal = parseFloat(document.getElementById("p-cal").value) || 0;
+      const pro = parseFloat(document.getElementById("p-pro").value) || 0;
+      const carb = parseFloat(document.getElementById("p-carb").value) || 0;
+      const fat = parseFloat(document.getElementById("p-fat").value) || 0;
+      const fib = parseFloat(document.getElementById("p-fib").value) || 0;
+      const sug = parseFloat(document.getElementById("p-sug").value) || 0;
+      const iron = parseFloat(document.getElementById("p-iron").value) || 0;
+
+      if (!name) {
+        alert("Enter a preset name");
+        return;
+      }
+
+      const item = { name, cal, pro, carb, fat, fib, sug, iron };
+      const editIdx = parseInt(document.getElementById("preset-edit-index").value, 10);
+
+      if (editIdx >= 0) {
+        presets[editIdx] = item;
+      } else {
+        presets.push(item);
+      }
+
+      renderPresets();
+      togglePresetForm(false);
+      clearPresetInputs();
+    }
+
+    function deletePreset(idx) {
+      if (confirm(`Delete "${presets[idx].name}"?`)) {
+        presets.splice(idx, 1);
+        renderPresets();
+      }
+    }
+
+    function logPreset(idx) {
+      const p = presets[idx];
+      entries.push({ ...p });
+      saveAndRenderLogs();
+    }
+
+    function saveAndRenderLogs() {
+      localStorage.setItem("macro_entries", JSON.stringify(entries));
+      const tbody = document.getElementById("log-body");
+      tbody.innerHTML = "";
+
+      let totals = { cal: 0, pro: 0, carb: 0, fat: 0, fib: 0, sug: 0, iron: 0 };
+
+      entries.forEach((item, index) => {
+        totals.cal += Number(item.cal) || 0;
+        totals.pro += Number(item.pro) || 0;
+        totals.carb += Number(item.carb) || 0;
+        totals.fat += Number(item.fat) || 0;
+        totals.fib += Number(item.fib) || 0;
+        totals.sug += Number(item.sug) || 0;
+        totals.iron += Number(item.iron) || 0;
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><strong>${item.name}</strong></td>
+          <td>${item.cal}</td>
+          <td>${item.pro}g</td>
+          <td>${item.carb}g</td>
+          <td>${item.fat}g</td>
+          <td>${item.fib}g</td>
+          <td>${item.sug}g</td>
+          <td>${item.iron}mg</td>
+          <td><button class="btn-delete" onclick="deleteEntry(${index})">&times;</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      document.getElementById("total-cal").textContent = Math.round(totals.cal);
+      document.getElementById("total-pro").textContent = totals.pro.toFixed(1) + "g";
+      document.getElementById("total-carb").textContent = totals.carb.toFixed(1) + "g";
+      document.getElementById("total-fat").textContent = totals.fat.toFixed(1) + "g";
+      document.getElementById("total-fib").textContent = totals.fib.toFixed(1) + "g";
+      document.getElementById("total-sug").textContent = totals.sug.toFixed(1) + "g";
+      document.getElementById("total-iron").textContent = totals.iron.toFixed(1) + "mg";
+    }
+
+    function handleCustomAdd(e) {
+      e.preventDefault();
+      const name = document.getElementById("food-name").value;
+      const cal = parseFloat(document.getElementById("food-cal").value) || 0;
+      const pro = parseFloat(document.getElementById("food-pro").value) || 0;
+      const carb = parseFloat(document.getElementById("food-carb").value) || 0;
+      const fat = parseFloat(document.getElementById("food-fat").value) || 0;
+      const fib = parseFloat(document.getElementById("food-fib").value) || 0;
+      const sug = parseFloat(document.getElementById("food-sug").value) || 0;
+      const iron = parseFloat(document.getElementById("food-iron").value) || 0;
+
+      entries.push({ name, cal, pro, carb, fat, fib, sug, iron });
+      document.getElementById("food-form").reset();
+      saveAndRenderLogs();
+    }
+
+    function deleteEntry(index) {
+      entries.splice(index, 1);
+      saveAndRenderLogs();
+    }
+
+    function clearAll() {
+      if (confirm("Reset today's logs?")) {
+        entries = [];
+        saveAndRenderLogs();
+      }
+    }
+
+    renderPresets();
+    saveAndRenderLogs();
+  </script>
+</body>
+</html>
